@@ -5,7 +5,7 @@ Minimalistic Rust Implementation Of Model Context Protocol(MCP).
 [![Crates.io](https://img.shields.io/crates/v/mcp-sdk)](https://crates.io/crates/mcp-sdk)
 
 
-Main repo from Anthropic: [MCP](https://github.com/modelcontextprotocol)
+Learn more about MCP: [MCP](https://github.com/modelcontextprotocol)
 
 ## Minimalistic approach
 Given it is still very early stage of MCP adoption, the goal is to remain agile and easy to understand.

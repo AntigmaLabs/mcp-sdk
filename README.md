@@ -7,6 +7,9 @@ Minimalistic Rust Implementation Of Model Context Protocol(MCP).
 
 Learn more about MCP: [MCP](https://github.com/modelcontextprotocol)
 
+There is now an official rust sdk : https://github.com/modelcontextprotocol/rust-sdk.
+This repo will be open for learning and study purpose. 
+
 ## Minimalistic approach
 Given it is still very early stage of MCP adoption, the goal is to remain agile and easy to understand.
 This implementation aims to capture the core idea of MCP while maintaining compatibility with Claude Desktop.

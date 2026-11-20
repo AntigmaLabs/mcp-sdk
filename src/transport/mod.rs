@@ -5,7 +5,9 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
+mod sse;
 mod stdio;
+pub use sse::*;
 pub use stdio::*;
 
 /// only JsonRpcMessage is supported for now

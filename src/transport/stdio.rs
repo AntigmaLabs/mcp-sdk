@@ -74,7 +74,7 @@ impl Transport for ClientStdioTransport {
             .ok_or_else(|| anyhow::anyhow!("Transport not opened"))?;
         let mut line = String::new();
         stdout.read_line(&mut line)?;
-        println!("Received from process: {line}");
+        debug!("Received from process: {line}");
         let message: Message = serde_json::from_str(&line)?;
         Ok(message)
     }

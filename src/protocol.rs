@@ -268,13 +268,7 @@ where
     F: Fn(Req) -> Result<Resp> + Send + Sync + 'static,
 {
     async fn handle(&self, request: JsonRpcRequest) -> Result<JsonRpcResponse> {
-        // If params is None or null, deserialize as unit type using Value::Null
-        let params: Req = if request.params.is_none() || request.params.as_ref().unwrap().is_null()
-        {
-            serde_json::from_value(serde_json::Value::Null)?
-        } else {
-            serde_json::from_value(request.params.unwrap())?
-        };
+        let params: Req = parse_params(request.params)?;
         let result = (self.handler)(params)?;
         Ok(JsonRpcResponse {
             id: request.id,
@@ -300,12 +294,71 @@ where
     F: Fn(N) -> Result<()> + Send + Sync + 'static,
 {
     fn handle(&self, notification: JsonRpcNotification) -> Result<()> {
-        let params: N =
-            if notification.params.is_none() || notification.params.as_ref().unwrap().is_null() {
-                serde_json::from_value(serde_json::Value::Null)?
-            } else {
-                serde_json::from_value(notification.params.unwrap())?
-            };
+        let params: N = parse_params(notification.params)?;
         (self.handler)(params)
+    }
+}
+
+/// Deserialize optional JSON-RPC params. Missing or `null` params mean "no arguments": they
+/// become `null` for handlers that take `()`, and `{}` for handlers that take a struct whose
+/// fields are all optional, such as `ListRequest` for `tools/list`, where clients may omit
+/// `params` entirely.
+fn parse_params<T: DeserializeOwned>(params: Option<serde_json::Value>) -> Result<T> {
+    match params {
+        None | Some(serde_json::Value::Null) => serde_json::from_value(serde_json::Value::Null)
+            .or_else(|_| serde_json::from_value(serde_json::json!({})))
+            .map_err(Into::into),
+        Some(params) => Ok(serde_json::from_value(params)?),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::{CallToolRequest, ListRequest};
+
+    #[test]
+    fn missing_or_null_params_fit_structs_with_optional_fields() {
+        let request: ListRequest = parse_params(None).unwrap();
+        assert!(request.cursor.is_none());
+        let request: ListRequest = parse_params(Some(serde_json::Value::Null)).unwrap();
+        assert!(request.cursor.is_none());
+    }
+
+    #[test]
+    fn missing_params_fit_unit_handlers() {
+        parse_params::<()>(None).unwrap();
+    }
+
+    #[test]
+    fn given_params_are_used_as_is() {
+        let request: ListRequest =
+            parse_params(Some(serde_json::json!({ "cursor": "next" }))).unwrap();
+        assert_eq!(request.cursor.as_deref(), Some("next"));
+    }
+
+    #[test]
+    fn missing_params_still_fail_when_fields_are_required() {
+        let error = parse_params::<CallToolRequest>(None).unwrap_err();
+        assert!(error.to_string().contains("name"), "{error}");
+    }
+
+    #[tokio::test]
+    async fn tools_list_without_params_gets_a_result() {
+        let handler = TypedRequestHandler {
+            handler: |_req: ListRequest| Ok(serde_json::json!({ "tools": [] })),
+            _phantom: std::marker::PhantomData,
+        };
+        let response = handler
+            .handle(JsonRpcRequest {
+                id: 1,
+                method: "tools/list".to_string(),
+                params: None,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        assert_eq!(response.result, Some(serde_json::json!({ "tools": [] })));
+        assert!(response.error.is_none());
     }
 }

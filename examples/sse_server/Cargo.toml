@@ -1,0 +1,12 @@
+[package]
+name = "sse_server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mcp-sdk = { path = "../.." }
+tokio = { version = "1.0", features = ["full"] }
+serde_json = "1.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"

@@ -96,6 +96,24 @@ impl Tool for CreateEntitiesTool {
 ```
 - [x] See [examples/file_system/README.md](examples/file_system/README.md) for usage examples and documentation
 
+#### SSE Server Example
+Serve over HTTP with Server-Sent Events instead of stdio, so clients can connect over the network:
+```rust
+    let transport = ServerSseTransport::bind("127.0.0.1:3000")?;
+    let server = Server::builder(transport)
+        .capabilities(ServerCapabilities {
+            tools: Some(json!({})),
+            ..Default::default()
+        })
+        .tools(tools)
+        .build();
+    server.listen().await?;
+```
+Clients connect to `http://127.0.0.1:3000/sse`. Browser origins other than localhost are rejected unless
+allowed with `.allow_origin(...)`, and there is no built-in authentication, so put a reverse proxy in
+front before exposing the server beyond your machine.
+- [x] See [examples/sse_server](examples/sse_server/src/main.rs) for a runnable server with one tool
+
 #### Client Example
 ```rust
 #[tokio::main]
@@ -144,7 +162,7 @@ For complete feature please refer to the [MCP specification](https://spec.modelc
 - Transport
     - [x] Stdio
     - [ ] In Memory Channel (not yet supported in formal specification)
-    - [ ] SSE
+    - [x] SSE (server)
     - [ ] More compact serialization format (not yet supported in formal specification)
 - Utilities 
     - [ ] Ping

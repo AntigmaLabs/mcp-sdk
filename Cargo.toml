@@ -4,6 +4,7 @@ members = [
     "examples/client",
     "examples/file_system",
     "examples/knowledge_graph_memory",
+    "examples/sse_server",
 ]
 
 # Your existing package configuration stays here
